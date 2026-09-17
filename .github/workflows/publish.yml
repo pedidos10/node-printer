@@ -18,7 +18,3 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - run: npm ci --ignore-scripts
       - run: npm publish --access public
-        env:
-          # Only needed until the package exists on npm and a trusted publisher
-          # can be configured; OIDC takes over after that and this can go.
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
