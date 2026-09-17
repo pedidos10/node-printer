@@ -9,3 +9,6 @@ test
 ChangeLog
 README.md
 tsconfig.json
+AGENTS.md
+build/
+lib/*.node
