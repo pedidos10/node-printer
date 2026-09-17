@@ -16,11 +16,19 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Electron 15 — o que o PDV carrega em produção
           - { os: windows-latest, arch: x64,   runtime: electron, target: 15.5.5  }
           - { os: macos-latest,   arch: arm64, runtime: electron, target: 15.5.5  }
           - { os: ubuntu-latest,  arch: x64,   runtime: electron, target: 15.5.5  }
+          # Windows — o runner que gera o instalador
           - { os: windows-latest, arch: x64,   runtime: node,     target: 22.12.0 }
           - { os: windows-latest, arch: x64,   runtime: node,     target: 24.11.0 }
+          # Linux — todo pnpm install do monorepo em CI passa por aqui
+          - { os: ubuntu-latest,  arch: x64,   runtime: node,     target: 22.12.0 }
+          - { os: ubuntu-latest,  arch: x64,   runtime: node,     target: 24.11.0 }
+          # Mac M — devs
+          - { os: macos-latest,   arch: arm64, runtime: node,     target: 22.12.0 }
+          - { os: macos-latest,   arch: arm64, runtime: node,     target: 24.11.0 }
     timeout-minutes: 30
     steps:
       - if: ${{ matrix.os == 'ubuntu-latest' }}
