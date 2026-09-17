@@ -1,24 +1,26 @@
 name: CI for Main Branch
 permissions:
-  contents: read
+  contents: write
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   prebuild:
-    name: Prebuild Binaries
+    name: ${{ matrix.runtime }} ${{ matrix.target }} / ${{ matrix.os }} ${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
-        arch: [x64]
-        node: [22.x, 23.x, 24.x, 25.x, 26.x]
-        exclude:
-          - os: windows-latest
-            node: 23.x
+        include:
+          - { os: windows-latest, arch: x64,   runtime: electron, target: 15.5.5  }
+          - { os: macos-latest,   arch: arm64, runtime: electron, target: 15.5.5  }
+          - { os: ubuntu-latest,  arch: x64,   runtime: electron, target: 15.5.5  }
+          - { os: windows-latest, arch: x64,   runtime: node,     target: 22.12.0 }
+          - { os: windows-latest, arch: x64,   runtime: node,     target: 24.11.0 }
     timeout-minutes: 30
     steps:
       - if: ${{ matrix.os == 'ubuntu-latest' }}
@@ -26,15 +28,17 @@ jobs:
         run: |
           sudo apt-get update -y -qq
           sudo apt-get install -y g++-multilib gcc-multilib libcups2-dev linux-libc-dev
+      - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: ${{ matrix.node }}
-      - uses: actions/checkout@v5
-      # --ignore-scripts skips the package's own install-time `node-gyp rebuild`,
-      # which would otherwise compile against unpatched nan before apply-patches
-      # runs and fail on V8 >= 14.8. The prebuild step below compiles fresh.
+          node-version: 22.x
+      # --ignore-scripts skips the package's own install-time build, which would
+      # otherwise compile against unpatched nan before apply-patches runs.
       - run: npm i --ignore-scripts
+      - run: npm run apply-patches
       - name: Prebuild
-        run: |
-          npm run apply-patches
-          npm run prebuild -- --strip --arch ${{ matrix.arch }} -u ${{ secrets.PREBUILD_TOKEN }}
+        run: >
+          npm run prebuild --
+          --strip --arch ${{ matrix.arch }}
+          -r ${{ matrix.runtime }} -t ${{ matrix.target }}
+          -u ${{ secrets.GITHUB_TOKEN }}
